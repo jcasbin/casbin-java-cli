@@ -4,7 +4,7 @@ import org.apache.commons.cli.*;
 import org.casbin.jcasbin.exception.CasbinConfigException;
 import org.casbin.jcasbin.main.Enforcer;
 
-public class JCasbinCLI {
+public class Client {
     private static void configureOptions(Options options) {
         Option[] cliOptions = {
                 addOption("m", "model", true, "the path of the model file"),
@@ -67,7 +67,7 @@ public class JCasbinCLI {
     }
 
     public static void main(String[] args) throws ParseException {
-        JCasbinCLI cli = new JCasbinCLI();
+        Client cli = new Client();
         Object run = cli.run(args);
         System.out.println(run);
     }
