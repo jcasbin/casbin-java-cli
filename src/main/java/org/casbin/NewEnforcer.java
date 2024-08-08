@@ -21,6 +21,7 @@ public class NewEnforcer extends Enforcer {
     }
 
     public static String parse(String string, String suffix) {
+        string = string.replace("|","\n");
         boolean isFile = string.endsWith(suffix);
         if(suffix.equals(".conf")) {
             if(isFile) {
