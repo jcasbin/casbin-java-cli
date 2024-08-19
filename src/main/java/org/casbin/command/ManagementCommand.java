@@ -7,8 +7,7 @@ import java.util.HashMap;
 
 import java.util.Map;
 
-import static org.casbin.util.Util.parseNestedLists;
-import static org.casbin.util.Util.parseOrdinary;
+import static org.casbin.util.Util.*;
 
 public class ManagementCommand extends AbstractCommand{
 
@@ -62,7 +61,7 @@ public class ManagementCommand extends AbstractCommand{
     private static final String UPDATE_NAMED_GROUPING_POLICY = "updateNamedGroupingPolicy";
 
     @Override
-    public void run(NewEnforcer enforcer, String... args) throws Exception {
+    public String run(NewEnforcer enforcer, String... args) throws Exception {
         Options options = getOptions();
 
         CommandLineParser parser = new DefaultParser();
@@ -123,21 +122,23 @@ public class ManagementCommand extends AbstractCommand{
             OperationHandle handle = handlers.get(option);
             String[] params = cmd.getOptionValues(option);
             String res = handle.handle(params);
-            System.out.println(res);
             enforcer.savePolicy();
+            System.out.println(res);
+            return res;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             formatter.printHelp("management", options);
         }
+        return "";
     }
 
     private static Map<String, OperationHandle> getStringOperationHandleMap(NewEnforcer enforcer) {
         Map<String, OperationHandle> handlers = new HashMap<>();
 
-        handlers.put(ENFORCE, (params) -> String.valueOf(enforcer.enforce(params[0].split(","))));
-        handlers.put(ENFORCE_WITH_MATCHER, (params) -> String.valueOf(enforcer.enforceWithMatcher(params[0], params[1].split(","))));
-        handlers.put(ENFORCE_EX, (params) -> String.valueOf(enforcer.enforceEx(params[0].split(","))));
-        handlers.put(ENFORCE_EX_WITH_MATCHER, (params) -> String.valueOf(enforcer.enforceExWithMatcher(params[0], params[1].split(","))));
+        handlers.put(ENFORCE, params -> String.valueOf(enforcer.enforce(cutString(params[0]))));
+        handlers.put(ENFORCE_WITH_MATCHER, (params) -> String.valueOf(enforcer.enforceWithMatcher(params[0], cutString(params[1]))));
+        handlers.put(ENFORCE_EX, (params) -> String.valueOf(enforcer.enforceEx(cutString(params[0]))));
+        handlers.put(ENFORCE_EX_WITH_MATCHER, (params) -> String.valueOf(enforcer.enforceExWithMatcher(params[0], cutString(params[1]))));
         handlers.put(BATCH_ENFORCE, (params) -> String.valueOf(enforcer.batchEnforce(parseNestedLists(params[0]))));
         handlers.put(GET_ALL_SUBJECTS, (params) -> String.valueOf(enforcer.getAllSubjects()));
         handlers.put(GET_ALL_NAMED_SUBJECTS, (params) -> String.valueOf(enforcer.getAllNamedSubjects(params[0])));
@@ -148,36 +149,36 @@ public class ManagementCommand extends AbstractCommand{
         handlers.put(GET_ALL_ROLES, (params) -> String.valueOf(enforcer.getAllRoles()));
         handlers.put(GET_ALL_NAMED_ROLES, (params) -> String.valueOf(enforcer.getAllNamedRoles(params[0])));
         handlers.put(GET_POLICY, (params) -> String.valueOf(enforcer.getPolicy()));
-        handlers.put(GET_FILTERED_POLICY, (params) -> String.valueOf(enforcer.getFilteredPolicy(Integer.parseInt(params[0]), params[1].split(","))));
+        handlers.put(GET_FILTERED_POLICY, (params) -> String.valueOf(enforcer.getFilteredPolicy(Integer.parseInt(params[0]), cutString(params[1]))));
         handlers.put(GET_NAMED_POLICY, (params) -> String.valueOf(enforcer.getNamedPolicy(params[0])));
-        handlers.put(GET_FILTERED_NAMED_POLICY, (params) -> String.valueOf(enforcer.getFilteredNamedPolicy(params[0], Integer.parseInt(params[1]), params[2].split(","))));
+        handlers.put(GET_FILTERED_NAMED_POLICY, (params) -> String.valueOf(enforcer.getFilteredNamedPolicy(params[0], Integer.parseInt(params[1]), cutString(params[2]))));
         handlers.put(GET_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getGroupingPolicy()));
-        handlers.put(GET_FILTERED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getFilteredGroupingPolicy(Integer.parseInt(params[0]), params[1].split(","))));
+        handlers.put(GET_FILTERED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getFilteredGroupingPolicy(Integer.parseInt(params[0]), cutString(params[1]))));
         handlers.put(GET_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getNamedGroupingPolicy(params[0])));
-        handlers.put(GET_FILTERED_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getFilteredNamedGroupingPolicy(params[0], Integer.parseInt(params[1]), params[2].split(","))));
-        handlers.put(HAS_POLICY, (params) -> String.valueOf(enforcer.hasPolicy(params[0].split(","))));
-        handlers.put(HAS_NAMED_POLICY, (params) -> String.valueOf(enforcer.hasNamedPolicy(params[0], params[1].split(","))));
-        handlers.put(ADD_POLICY, (params) -> String.valueOf(enforcer.addPolicy(parseOrdinary(params[0]))));
+        handlers.put(GET_FILTERED_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.getFilteredNamedGroupingPolicy(params[0], Integer.parseInt(params[1]), cutString(params[0]))));
+        handlers.put(HAS_POLICY, (params) -> String.valueOf(enforcer.hasPolicy(cutString(params[0]))));
+        handlers.put(HAS_NAMED_POLICY, (params) -> String.valueOf(enforcer.hasNamedPolicy(params[0], cutString(params[1]))));
+        handlers.put(ADD_POLICY, (params) -> String.valueOf(enforcer.addPolicy(cutString(params[0]))));
         handlers.put(ADD_POLICIES, (params) -> String.valueOf(enforcer.addPolicies(parseNestedLists(params[0]))));
-        handlers.put(ADD_NAMED_POLICY, (params) -> String.valueOf(enforcer.addNamedPolicy(params[0], params[1].split(","))));
+        handlers.put(ADD_NAMED_POLICY, (params) -> String.valueOf(enforcer.addNamedPolicy(params[0], cutString(params[1]))));
         handlers.put(ADD_NAMED_POLICIES, (params) -> String.valueOf(enforcer.addNamedPolicies(params[0], parseNestedLists(params[1]))));
-        handlers.put(REMOVE_POLICY, (params) -> String.valueOf(enforcer.removePolicy(params[0].split(","))));
+        handlers.put(REMOVE_POLICY, (params) -> String.valueOf(enforcer.removePolicy(cutString(params[0]))));
         handlers.put(REMOVE_POLICIES, (params) -> String.valueOf(enforcer.removePolicies(parseNestedLists(params[0]))));
-        handlers.put(REMOVE_FILTERED_POLICY, (params) -> String.valueOf(enforcer.removeFilteredPolicy(Integer.parseInt(params[0]), params[1].split(","))));
-        handlers.put(REMOVE_NAMED_POLICY, (params) -> String.valueOf(enforcer.removeNamedPolicy(params[0], params[1].split(","))));
+        handlers.put(REMOVE_FILTERED_POLICY, (params) -> String.valueOf(enforcer.removeFilteredPolicy(Integer.parseInt(params[0]), cutString(params[1]))));
+        handlers.put(REMOVE_NAMED_POLICY, (params) -> String.valueOf(enforcer.removeNamedPolicy(params[0], cutString(params[1]))));
         handlers.put(REMOVE_NAMED_POLICIES, (params) -> String.valueOf(enforcer.removeNamedPolicies(params[0], parseNestedLists(params[1]))));
-        handlers.put(REMOVE_FILTERED_NAMED_POLICY, (params) -> String.valueOf(enforcer.removeFilteredNamedPolicy(params[0], Integer.parseInt(params[1]), params[2].split(","))));
-        handlers.put(HAS_GROUPING_POLICY, (params) -> String.valueOf(enforcer.hasGroupingPolicy(params[0].split(","))));
-        handlers.put(HAS_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.hasNamedGroupingPolicy(params[0], params[1].split(","))));
-        handlers.put(ADD_GROUPING_POLICY, (params) -> String.valueOf(enforcer.addGroupingPolicy(params[0].split(","))));
+        handlers.put(REMOVE_FILTERED_NAMED_POLICY, (params) -> String.valueOf(enforcer.removeFilteredNamedPolicy(params[0], Integer.parseInt(params[1]), cutString(params[0]))));
+        handlers.put(HAS_GROUPING_POLICY, (params) -> String.valueOf(enforcer.hasGroupingPolicy(cutString(params[0]))));
+        handlers.put(HAS_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.hasNamedGroupingPolicy(params[0], cutString(params[1]))));
+        handlers.put(ADD_GROUPING_POLICY, (params) -> String.valueOf(enforcer.addGroupingPolicy(cutString(params[0]))));
         handlers.put(ADD_GROUPING_POLICIES, (params) -> String.valueOf(enforcer.addGroupingPolicies(parseNestedLists(params[0]))));
-        handlers.put(ADD_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.addNamedGroupingPolicy(params[0], params[1].split(","))));
+        handlers.put(ADD_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.addNamedGroupingPolicy(params[0], cutString(params[1]))));
         handlers.put(ADD_NAMED_GROUPING_POLICIES, (params) -> String.valueOf(enforcer.addNamedGroupingPolicies(params[0], parseNestedLists(params[1]))));
         handlers.put(REMOVE_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeGroupingPolicy(params[0])));
         handlers.put(REMOVE_GROUPING_POLICIES, (params) -> String.valueOf(enforcer.removeGroupingPolicies(parseNestedLists(params[0]))));
-        handlers.put(REMOVE_FILTERED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeFilteredGroupingPolicy(Integer.parseInt(params[0]), params[1].split(","))));
-        handlers.put(REMOVE_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeNamedGroupingPolicy(params[0], params[1].split(","))));
-        handlers.put(REMOVE_FILTERED_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeFilteredNamedGroupingPolicy(params[0], Integer.parseInt(params[1]), params[2].split(","))));
+        handlers.put(REMOVE_FILTERED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeFilteredGroupingPolicy(Integer.parseInt(params[0]), cutString(params[1]))));
+        handlers.put(REMOVE_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeNamedGroupingPolicy(params[0], cutString(params[1]))));
+        handlers.put(REMOVE_FILTERED_NAMED_GROUPING_POLICY, (params) -> String.valueOf(enforcer.removeFilteredNamedGroupingPolicy(params[0], Integer.parseInt(params[1]), cutString(params[0]))));
         handlers.put(UPDATE_POLICY, (params) -> String.valueOf(enforcer.updatePolicy(parseOrdinary(params[0]), parseOrdinary(params[1]))));
         //handlers.put(LOAD_FILTERED_POLICY, (params) -> String.valueOf(enforcer.loadFilteredPolicy()));
         handlers.put(UPDATE_GROUPING_POLICY, (params) -> String.valueOf(enforcer.updateGroupingPolicy(parseOrdinary(params[0]), parseOrdinary(params[1]))));

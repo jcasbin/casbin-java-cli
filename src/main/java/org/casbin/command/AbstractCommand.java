@@ -8,5 +8,5 @@ public abstract class AbstractCommand {
 
     }
 
-    public abstract void run(NewEnforcer enforcer, String... args) throws Exception;
+    public abstract String run(NewEnforcer enforcer, String... args) throws Exception;
 }

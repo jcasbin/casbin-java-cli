@@ -17,7 +17,7 @@ public class RBACWithDomainsCommand extends AbstractCommand{
     private static final String DELETE_ROLES_FOR_USER_IN_DOMAIN = "deleteRolesForUserInDomain";
 
     @Override
-    public void run(NewEnforcer enforcer, String... args) throws Exception {
+    public String run(NewEnforcer enforcer, String... args) throws Exception {
         Options options = getOptions();
 
         CommandLineParser parser = new DefaultParser();
@@ -37,12 +37,14 @@ public class RBACWithDomainsCommand extends AbstractCommand{
             OperationHandle handle = handlers.get(option);
             String[] params = cmd.getOptionValues(option);
             String res = handle.handle(params);
-            System.out.println(res);
             enforcer.savePolicy();
+            System.out.println(res);
+            return res;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             formatter.printHelp("rbac_with_domains", options);
         }
+        return "";
     }
 
     private static Map<String, OperationHandle> getStringOperationHandleMap(NewEnforcer enforcer) {

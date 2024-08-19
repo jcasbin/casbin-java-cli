@@ -31,11 +31,12 @@ public class Client {
         COMMANDS.put(MANAGEMENT_COMMAND, new ManagementCommand());
     }
 
-    public void run(String... args) {
+    public static String run(String... args) {
+        String result = "";
+
         try {
             if(args == null || args.length == 0) {
-                System.out.println("error");
-                System.exit(1);
+                printUsageMessageAndExit("");
             }
 
             Options options = new Options();
@@ -76,16 +77,18 @@ public class Client {
                     enforcer.addFunction(methodName, customFunction);
                 }
 
-                String commandName = args[4];
+                String commandName = args[0];
                 AbstractCommand command = COMMANDS.get(commandName);
+
+
 
                 if(command != null) {
                     if(hasAddFuntion) {
-                        command.run(enforcer, Arrays.copyOfRange(args, 7, args.length));
+                        result = command.run(enforcer, Arrays.copyOfRange(args, 7, args.length));
                     } else {
-                        command.run(enforcer, Arrays.copyOfRange(args, 5, args.length));
+                        result = command.run(enforcer, Arrays.copyOfRange(args, 5, args.length));
                     }
-                    System.exit(0);
+//                    System.exit(0);
                 } else {
                     printUsageMessageAndExit(commandName);
                 }
@@ -98,10 +101,11 @@ public class Client {
             e.printStackTrace();
             System.exit(1);
         }
+        return result;
     }
 
 
-    private void printUsageMessageAndExit(String commandName) throws Exception {
+    private static void printUsageMessageAndExit(String commandName) throws Exception {
         if (commandName.isEmpty()) {
             System.out.println("Error: " + commandName + " not recognised");
         }
@@ -111,6 +115,6 @@ public class Client {
     }
 
     public static void main(String[] args) throws ParseException {
-        new Client().run(args);
+        run(args);
     }
 }

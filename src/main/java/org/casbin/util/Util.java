@@ -31,6 +31,10 @@ public class Util {
         return matcher.find() ? matcher.group(1) : null;
     }
 
+    public static String[] cutString(String str) {
+        return str.replace(" ","").split(",");
+    }
+
     public static int getArgsNum(String methodCodes) {
         String regex = "\\(([^)]*)\\)";
         Pattern pattern = Pattern.compile(regex);
