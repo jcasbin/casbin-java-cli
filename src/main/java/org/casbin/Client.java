@@ -1,89 +1,116 @@
 package org.casbin;
 
+
 import org.apache.commons.cli.*;
-import org.casbin.jcasbin.exception.CasbinEffectorException;
-import org.casbin.jcasbin.main.EnforceResult;
+import org.casbin.command.*;
+import org.casbin.generate.DynamicClassGenerator;
+import org.casbin.jcasbin.util.function.CustomFunction;
+import org.casbin.util.Util;
+
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class Client {
-    private static void configureOptions(Options options) {
-        Option[] cliOptions = {
-                addOption("m", "model", true, "the path of the model file"),
-                addOption("p", "policy", true, "the path of the policy file"),
-                addOption("e", "enforce", true, "enforce"),
-                addOption("ex", "enforceEx", true, "enforceEx"),
-                addOption("ap", "addPolicy", true, "Add a policy rule to the storage"),
-                addOption("rp", "removePolicy", true, "Remove a policy rule from the storage")
-        };
-        for (Option option : cliOptions) {
+
+    private static final String RBAC_COMMAND = "rbac";
+    private static final String RBAC_WITH_CONDITION_COMMAND = "rbac_with_condition";
+    private static final String RBAC_WITH_DOMAINS_COMMAND = "rbac_with_domains";
+    private static final String ROLEMANAGER_COMMAND = "role_manager";
+    private static final String MANAGEMENT_COMMAND = "management";
+
+    private static final Map<String, AbstractCommand> COMMANDS = new HashMap<>();
+
+    static {
+        COMMANDS.put(RBAC_COMMAND, new RBACCommand());
+        COMMANDS.put(RBAC_WITH_CONDITION_COMMAND, new RBACWithConditionsCommand());
+        COMMANDS.put(RBAC_WITH_DOMAINS_COMMAND, new RBACWithDomainsCommand());
+        COMMANDS.put(ROLEMANAGER_COMMAND, new RoleManagerCommand());
+        COMMANDS.put(MANAGEMENT_COMMAND, new ManagementCommand());
+    }
+
+    public void run(String... args) {
+        try {
+            if(args == null || args.length == 0) {
+                System.out.println("error");
+                System.exit(1);
+            }
+
+            Options options = new Options();
+            Option option = new Option("m", "model", true, "the path of the model file or model text");
             options.addOption(option);
-        }
-    }
-    private static Option addOption(String shortOpt, String longOpt, boolean hasArg, String description) {
-        return new Option(shortOpt, longOpt, hasArg, description);
-    }
+            option = new Option("p", "policy", true, "the path of the policy file or policy text");
+            options.addOption(option);
+            option = new Option("af", "addFunction", true, "add custom function");
+            option.setRequired(false);
+            options.addOption(option);
 
-    public static Object run(String[] args) throws ParseException {
-        Options options = new Options();
-        configureOptions(options);
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
-        String model = cmd.getOptionValue("model");
-        String policy = cmd.getOptionValue("policy");
-        NewEnforcer enforcer = null;
-        try {
-            enforcer = new NewEnforcer(model, policy);
-        }  catch (NullPointerException | CasbinEffectorException | UnsupportedOperationException e) {
-            System.out.println("unsupported effect:" + e.getMessage());
-            System.exit(0);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.exit(0);
-        }
-
-        try {
-            if(cmd.hasOption("enforce")) {
-                String enforceArgs = cmd.getOptionValue("enforce").replace(" ","");
-                boolean result = enforcer.enforce(enforceArgs.split(","));
-                System.out.println(result ? "Allow" : "Ban");
-                return result;
-            } else if (cmd.hasOption("enforceEx")) {
-                String enforceArgs = cmd.getOptionValue("enforceEx").replace(" ","");
-                EnforceResult enforceResult = enforcer.enforceEx(enforceArgs.split(","));
-                boolean allow = enforceResult.isAllow();
-                if(allow) {
-                    System.out.printf("%s Reason: %s", allow, enforceResult.getExplain());
-                } else {
-                    System.out.println(allow);
+            boolean hasAddFuntion = false;
+            for (String arg : args) {
+                if(arg.equals("-af") || arg.equals("-addFunction")) {
+                    hasAddFuntion = true;
+                    break;
                 }
-                return allow;
-            }else if (cmd.hasOption("addPolicy")){
-                String policyArgs = cmd.getOptionValue("addPolicy").replace(" ","");
-                boolean result = enforcer.addPolicy(policyArgs.split(","));
-                System.out.println(result ? "Add Success" : "Add Failed");
-                enforcer.savePolicy();
-                return result;
-            }else if (cmd.hasOption("removePolicy")){
-                String policyArgs = cmd.getOptionValue("removePolicy").replace(" ","");
-                boolean result = enforcer.removePolicy(policyArgs.split(","));
-                System.out.println(result ? "Remove Success" : "Remove Failed");
-                enforcer.savePolicy();
-                return result;
-            }else {
-                System.out.println("Command Error");
-                return null;
+            }
+
+            CommandLineParser parser = new DefaultParser();
+
+            CommandLine cmd = null;
+            if(hasAddFuntion) {
+                cmd = parser.parse(options, Arrays.stream(args).limit(7).toArray(String[]::new));
+            } else {
+                cmd = parser.parse(options, Arrays.stream(args).limit(5).toArray(String[]::new));
+            }
+
+            if(cmd.hasOption("model") && cmd.hasOption("policy")) {
+                String model = cmd.getOptionValue("model");
+                String policy = cmd.getOptionValue("policy");
+                NewEnforcer enforcer = new NewEnforcer(model, policy);
+
+                if (hasAddFuntion) {
+                    String codes = cmd.getOptionValue("addFunction");
+                    String methodName = Util.getMethodName(codes);
+                    CustomFunction customFunction = DynamicClassGenerator.generateClass(methodName, codes);
+                    enforcer.addFunction(methodName, customFunction);
+                }
+
+                String commandName = args[4];
+                AbstractCommand command = COMMANDS.get(commandName);
+
+                if(command != null) {
+                    if(hasAddFuntion) {
+                        command.run(enforcer, Arrays.copyOfRange(args, 7, args.length));
+                    } else {
+                        command.run(enforcer, Arrays.copyOfRange(args, 5, args.length));
+                    }
+                    System.exit(0);
+                } else {
+                    printUsageMessageAndExit(commandName);
+                }
+
+            } else {
+                new HelpCommand().run();
+                System.exit(1);
             }
         } catch (Exception e) {
-            System.out.println("unsupported effect:" + e.getMessage());
-            System.exit(0);
+            e.printStackTrace();
+            System.exit(1);
         }
-        return null;
+    }
+
+
+    private void printUsageMessageAndExit(String commandName) throws Exception {
+        if (commandName.isEmpty()) {
+            System.out.println("Error: " + commandName + " not recognised");
+        }
+
+        new HelpCommand().run();
+        System.exit(1);
     }
 
     public static void main(String[] args) throws ParseException {
-        Client cli = new Client();
-        Object run = run(args);
+        new Client().run(args);
     }
 }

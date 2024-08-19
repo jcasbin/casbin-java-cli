@@ -1,6 +1,7 @@
 package org.casbin;
 
 import org.casbin.jcasbin.main.Enforcer;
+import org.casbin.jcasbin.util.function.CustomFunction;
 
 import java.io.BufferedWriter;
 import java.io.File;
