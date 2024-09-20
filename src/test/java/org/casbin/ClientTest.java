@@ -111,4 +111,9 @@ public class ClientTest {
 
         }
 
+        @Test
+        public void testEnforce() {
+            assertEquals(Client.run(new String[]{"enforce","-m","examples/rbac_model.conf","-p","examples/rbac_policy.csv", "alice", "data1", "read"}), "true");
+        }
+
 }

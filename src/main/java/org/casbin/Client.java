@@ -20,6 +20,7 @@ public class Client {
     private static final String RBAC_WITH_DOMAINS_COMMAND = "rbac_with_domains";
     private static final String ROLEMANAGER_COMMAND = "role_manager";
     private static final String MANAGEMENT_COMMAND = "management";
+    private static final String ENFORCE_COMMAND = "enforce";
 
     private static final Map<String, AbstractCommand> COMMANDS = new HashMap<>();
 
@@ -29,6 +30,7 @@ public class Client {
         COMMANDS.put(RBAC_WITH_DOMAINS_COMMAND, new RBACWithDomainsCommand());
         COMMANDS.put(ROLEMANAGER_COMMAND, new RoleManagerCommand());
         COMMANDS.put(MANAGEMENT_COMMAND, new ManagementCommand());
+        COMMANDS.put(ENFORCE_COMMAND, new EnforceCommand());
     }
 
     public static String run(String... args) {
