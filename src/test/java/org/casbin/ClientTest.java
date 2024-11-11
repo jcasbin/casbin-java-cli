@@ -3,6 +3,10 @@ package org.casbin;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import static org.junit.Assert.assertEquals;
 
 public class ClientTest {
@@ -112,7 +116,7 @@ public class ClientTest {
         assertEquals(Client.run(new String[]{"enforce", "-m", model, "-p", "examples/keymatch_policy.csv", "-AF", func,   "cathy", "/cathy_data", "POST"}), "{\"allow\":true,\"explain\":null}");
         assertEquals(Client.run(new String[]{"enforce", "-m", model, "-p", "examples/keymatch_policy.csv", "-AF", func,   "cathy", "/cathy_data", "DELETE"}), "{\"allow\":false,\"explain\":null}");
 
-        }
+    }
 
     @Test
     public void testEnforce() {
@@ -216,7 +220,6 @@ public class ClientTest {
 
         assertEquals(Client.run(new String[]{"updatePolicy", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice,data1,write","alice,data1,read"}), "{\"allow\":true,\"explain\":null}");
 
-
         assertEquals(Client.run(new String[]{"updateNamedGroupingPolicy", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "g", "alice,data2_admin","admin,data4_admin"}), "{\"allow\":true,\"explain\":null}");
 
         assertEquals(Client.run(new String[]{"updateNamedGroupingPolicy", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "g", "admin,data4_admin","alice,data2_admin"}), "{\"allow\":true,\"explain\":null}");
@@ -234,5 +237,81 @@ public class ClientTest {
         assertEquals(Client.run(new String[]{"addPolicies", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv","alice,data1,read","bob,data2,write","data2_admin,data2,read","data2_admin,data2,write"}), "{\"allow\":true,\"explain\":null}");
 
     }
+
+    @Test
+    public void testRBACApi () {
+        assertEquals(Client.run(new String[]{"getRolesForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice"}), "{\"allow\":null,\"explain\":[\"data2_admin\"]}");
+
+        assertEquals(Client.run(new String[]{"getUsersForRole", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "data2_admin"}), "{\"allow\":null,\"explain\":[\"alice\"]}");
+
+        assertEquals(Client.run(new String[]{"hasRoleForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice", "data2_admin"}), "{\"allow\":true,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"deleteRoleForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice", "data2_admin"}), "{\"allow\":true,\"explain\":null}");
+        resetRBACPolicyFile();
+
+        assertEquals(Client.run(new String[]{"deleteRolesForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice"}), "{\"allow\":true,\"explain\":null}");
+        resetRBACPolicyFile();
+
+        assertEquals(Client.run(new String[]{"deleteUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice"}), "{\"allow\":true,\"explain\":null}");
+        resetRBACPolicyFile();
+
+        assertEquals(Client.run(new String[]{"deleteRole", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "data2_admin"}), "{\"allow\":null,\"explain\":null}");
+        resetRBACPolicyFile();
+
+        assertEquals(Client.run(new String[]{"deletePermission", "-m", "examples/basic_without_resources_model.conf", "-p", "examples/basic_without_resources_policy.csv", "read"}), "{\"allow\":true,\"explain\":null}");
+        resetBasicWithResourcesPolicyFile();
+
+        assertEquals(Client.run(new String[]{"addPermissionForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "bob", "read"}), "{\"allow\":true,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"deletePermissionForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "bob", "read"}), "{\"allow\":true,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"deletePermissionsForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_policy.csv", "alice"}), "{\"allow\":true,\"explain\":null}");
+        resetRBACPolicyFile();
+
+        assertEquals(Client.run(new String[]{"hasPermissionForUser", "-m", "examples/basic_without_resources_model.conf", "-p", "examples/basic_without_resources_policy.csv", "alice", "read"}), "{\"allow\":true,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"getImplicitUsersForRole", "-m", "examples/rbac_with_pattern_model.conf", "-p", "examples/rbac_with_pattern_policy.csv", "book_admin"}), "{\"allow\":null,\"explain\":[\"alice\"]}");
+
+        assertEquals(Client.run(new String[]{"getImplicitPermissionsForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_with_hierarchy_policy.csv", "alice"}), "{\"allow\":null,\"explain\":[[\"alice\",\"data1\",\"read\"],[\"data1_admin\",\"data1\",\"read\"],[\"data1_admin\",\"data1\",\"write\"],[\"data2_admin\",\"data2\",\"read\"],[\"data2_admin\",\"data2\",\"write\"]]}");
+
+
+        assertEquals(Client.run(new String[]{"getNamedImplicitPermissionsForUser", "-m", "examples/rbac_with_multiple_policy_model.conf", "-p", "examples/rbac_with_multiple_policy_policy.csv", "p2", "alice"}), "{\"allow\":null,\"explain\":[[\"admin\",\"create\"],[\"user\",\"view\"]]}");
+
+
+
+
+
+
+
+    }
+
+
+    public void resetRBACPolicyFile() {
+        File file = new File("examples/rbac_policy.csv");
+        try {
+            FileWriter writer = new FileWriter(file);
+            writer.write("p, alice, data1, read\n");
+            writer.write("p, bob, data2, write\n");
+            writer.write("p, data2_admin, data2, read\n");
+            writer.write("p, data2_admin, data2, write\n");
+            writer.write("g, alice, data2_admin");
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void resetBasicWithResourcesPolicyFile() {
+        File file = new File("examples/basic_without_resources_policy.csv");
+        try {
+            FileWriter writer = new FileWriter(file);
+            writer.write("p, alice, read\n");
+            writer.write("p, bob, write");
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }
