@@ -274,15 +274,21 @@ public class ClientTest {
 
         assertEquals(Client.run(new String[]{"getImplicitPermissionsForUser", "-m", "examples/rbac_model.conf", "-p", "examples/rbac_with_hierarchy_policy.csv", "alice"}), "{\"allow\":null,\"explain\":[[\"alice\",\"data1\",\"read\"],[\"data1_admin\",\"data1\",\"read\"],[\"data1_admin\",\"data1\",\"write\"],[\"data2_admin\",\"data2\",\"read\"],[\"data2_admin\",\"data2\",\"write\"]]}");
 
-
         assertEquals(Client.run(new String[]{"getNamedImplicitPermissionsForUser", "-m", "examples/rbac_with_multiple_policy_model.conf", "-p", "examples/rbac_with_multiple_policy_policy.csv", "p2", "alice"}), "{\"allow\":null,\"explain\":[[\"admin\",\"create\"],[\"user\",\"view\"]]}");
 
+    }
 
+    @Test
+    public void testRBACWithDomainsApi () {
+        assertEquals(Client.run(new String[]{"getUsersForRoleInDomain", "-m", "examples/rbac_with_domains_model.conf", "-p", "examples/rbac_with_domains_policy.csv", "admin", "domain1"}), "{\"allow\":null,\"explain\":[\"alice\"]}");
 
+        assertEquals(Client.run(new String[]{"getRolesForUserInDomain", "-m", "examples/rbac_with_domains_model.conf", "-p", "examples/rbac_with_domains_policy.csv", "alice", "domain1"}), "{\"allow\":null,\"explain\":[\"admin\"]}");
 
+        assertEquals(Client.run(new String[]{"getPermissionsForUserInDomain", "-m", "examples/rbac_with_domains_model.conf", "-p", "examples/rbac_with_domains_policy.csv", "admin", "domain1"}), "{\"allow\":null,\"explain\":[[\"admin\",\"domain1\",\"data1\",\"read\"],[\"admin\",\"domain1\",\"data1\",\"write\"]]}");
 
+        assertEquals(Client.run(new String[]{"addRoleForUserInDomain", "-m", "examples/rbac_with_domains_model.conf", "-p", "examples/rbac_with_domains_policy.csv", "alice", "admin", "domain3"}), "{\"allow\":true,\"explain\":null}");
 
-
+        assertEquals(Client.run(new String[]{"deleteRoleForUserInDomain", "-m", "examples/rbac_with_domains_model.conf", "-p", "examples/rbac_with_domains_policy.csv", "alice", "admin", "domain3"}), "{\"allow\":true,\"explain\":null}");
     }
 
 
