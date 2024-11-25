@@ -1,13 +1,11 @@
 package org.casbin;
 
-
 import org.apache.commons.cli.*;
 import org.casbin.generate.DynamicClassGenerator;
 import org.casbin.jcasbin.util.function.CustomFunction;
 import org.casbin.util.Util;
 
 import java.util.*;
-
 
 public class Client {
 
@@ -25,11 +23,17 @@ public class Client {
                 return result;
             }
 
-            CommandLine cmd = getCmd(Arrays.copyOfRange(args, 1, args.length));
+            // processing line breaks in parameters
+            String[] processedArgs = new String[args.length];
+            processedArgs[0] = args[0];
+            for (int i = 1; i < args.length; i++) {
+                processedArgs[i] = args[i] != null ? args[i].replace("\\n", "\n") : null;
+            }
+
+            CommandLine cmd = getCmd(Arrays.copyOfRange(processedArgs, 1, processedArgs.length));
             String model = cmd.getOptionValue("model");
             String policy = cmd.getOptionValue("policy");
             NewEnforcer enforcer = new NewEnforcer(model, policy);
-
 
             if(cmd.hasOption("AF")) {
                 String codes = cmd.getOptionValue("AF");
@@ -49,7 +53,6 @@ public class Client {
         }
         return result;
     }
-
 
     private static void printUsageMessageAndExit(String commandName) throws Exception {
         if (commandName.isEmpty()) {
