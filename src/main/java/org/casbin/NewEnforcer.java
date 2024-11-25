@@ -1,72 +1,77 @@
 package org.casbin;
 
 import org.casbin.jcasbin.main.Enforcer;
-import org.casbin.jcasbin.util.function.CustomFunction;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NewEnforcer extends Enforcer {
 
+    private static final Pattern MODEL_SECTION_PATTERN = Pattern.compile(
+        "\\[request_definition\\].*?" +
+        "\\[policy_definition\\].*?" +
+        "\\[policy_effect\\].*?" +
+        "\\[matchers\\]",
+        Pattern.DOTALL
+    );
+
+    private static final Pattern POLICY_LINE_PATTERN = Pattern.compile(
+        "^\\s*(p|g),.*",
+        Pattern.MULTILINE
+    );
+
     public NewEnforcer(String modelPath, String policyFile) {
-        super(parse(modelPath, ".conf"), parse(policyFile, ".csv"));
+        super(parse(modelPath, true), parse(policyFile, false));
     }
 
-    public static String parse(String string, String suffix) {
-        string = string.replace("|","\n");
-        boolean isFile = string.endsWith(suffix);
-        if(suffix.equals(".conf")) {
-            if(isFile) {
-                try {
-                    simpleCheck(new String(Files.readAllBytes(Paths.get(string)), StandardCharsets.UTF_8));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                simpleCheck(string);
+    public static String parse(String input, boolean isModel) {
+        if (input == null || input.trim().isEmpty()) {
+            throw new IllegalArgumentException("Input cannot be null or empty");
+        }
+
+        // Check if input is an existing file
+        File file = new File(input);
+        if (file.exists() && file.isFile()) {
+            return input;
+        }
+
+        // If not a file, validate content format
+        if (isModel) {
+            if (!isValidModelContent(input)) {
+                throw new IllegalArgumentException("Invalid model format. Model must contain required sections: [request_definition], [policy_definition], [policy_effect], and [matchers]");
+            }
+        } else {
+            if (!input.trim().isEmpty() && !isValidPolicyContent(input)) {
+                throw new IllegalArgumentException("Invalid policy format. Policy must contain lines starting with 'p,' or 'g,' or be empty");
             }
         }
-        return isFile ? string : writeToTempFile(string, suffix);
+
+        // If content is valid, write to temp file
+        return writeToTempFile(input);
     }
 
-    public static String writeToTempFile(String str, String suffix) {
+    private static boolean isValidModelContent(String content) {
+        return MODEL_SECTION_PATTERN.matcher(content).find();
+    }
+
+    private static boolean isValidPolicyContent(String content) {
+        return content.trim().isEmpty() || POLICY_LINE_PATTERN.matcher(content).find();
+    }
+
+    public static String writeToTempFile(String content) {
         File tempFile = null;
         try {
-            tempFile = File.createTempFile("default", suffix);
+            tempFile = File.createTempFile("casbin_temp_", "");
             tempFile.deleteOnExit();
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-                writer.write(str);
+                writer.write(content);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Error creating temporary file", e);
         }
         return tempFile.getAbsolutePath();
-    }
-
-    private static void simpleCheck(String fileString) {
-        fileString = fileString.replace(" ","");
-        String[] requiredSubstrings = {"[request_definition]", "[policy_definition]", "[policy_effect]", "[matchers]", "r=", "p=", "e=", "m="};
-        List<String> missingSubstrings = new ArrayList<>();
-
-        for (String substring : requiredSubstrings) {
-            Pattern pattern = Pattern.compile(Pattern.quote(substring));
-            Matcher matcher = pattern.matcher(fileString);
-            if (!matcher.find()) {
-                missingSubstrings.add(substring);
-            }
-        }
-
-        if(!missingSubstrings.isEmpty()) {
-            throw new RuntimeException("missing required sections: " + String.join(", ", missingSubstrings));
-        }
     }
 }
