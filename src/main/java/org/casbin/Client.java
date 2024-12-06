@@ -6,7 +6,12 @@ import org.casbin.generate.DynamicClassGenerator;
 import org.casbin.jcasbin.util.function.CustomFunction;
 import org.casbin.util.Util;
 
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Properties;
 
 
 public class Client {
@@ -23,9 +28,19 @@ public class Client {
             if(Objects.equals(commandName, "-h") || Objects.equals(commandName, "--help")){
                 printHelpMessage();
                 return result;
+            } else if(Objects.equals(commandName, "-v") || Objects.equals(commandName, "--version")){
+                try{
+                    System.out.println("casbin-java-cli " + getVersion());
+                }catch (IOException e) {
+                    System.out.println("Failed to retrieve version information.");
+                    e.printStackTrace();
+                    System.out.println("Run './casbin --help or ./casbin -h' for usage.");
+                }
+                return result;
             }
 
             CommandLine cmd = getCmd(Arrays.copyOfRange(args, 1, args.length));
+
             String model = cmd.getOptionValue("model");
             String policy = cmd.getOptionValue("policy");
             NewEnforcer enforcer = new NewEnforcer(model, policy);
@@ -101,6 +116,7 @@ public class Client {
                 "      -m, --model <model>          The path of the model file or model text. Please wrap it with \"\" and separate each line with \"|\"\n" +
                 "      -p, --policy <policy>        The path of the policy file or policy text. Please wrap it with \"\" and separate each line with \"|\"\n" +
                 "      -AF, --addFunction <functionDefinition>       Add custom function. Please wrap it with \"\" and separate each line with \"|\"\n" +
+                "      -v, --version                The version of casbin-java-cli" +
                 "\n" +
                 "    args:\n" +
                 "      Parameters required for the method\n" +
@@ -113,5 +129,27 @@ public class Client {
                 "\n" +
                 "    For more information, visit https://github.com/casbin/casbin");
 
+    }
+
+    /***
+     * Retrieves the version of the project.
+     * @return The version of the project, or "Version not found" if the version is not found in the file.
+     * @throws Exception If an error occurs while reading the file or loading the properties.
+     */
+    private static String getVersion() throws Exception {
+        String classesPath = Client.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .getPath();
+        String targetPath = new File(classesPath).getParentFile().getCanonicalPath();
+        String propertiesPath = targetPath + File.separator + "maven-archiver" + File.separator + "pom.properties";
+        FileInputStream fileInputStream = new FileInputStream(propertiesPath);
+
+        Properties properties = new Properties();
+        properties.load(fileInputStream);
+        String version = properties.getProperty("version");
+
+        return version != null ? version : "Version not found";
     }
 }
