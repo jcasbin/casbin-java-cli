@@ -3,9 +3,18 @@ package org.casbin;
 import org.apache.commons.cli.*;
 import org.casbin.generate.DynamicClassGenerator;
 import org.casbin.jcasbin.util.function.CustomFunction;
+import org.casbin.util.DependencyHandler;
 import org.casbin.util.Util;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
 
 public class Client {
 
@@ -20,6 +29,15 @@ public class Client {
             String commandName = args[0];
             if(Objects.equals(commandName, "-h") || Objects.equals(commandName, "--help")){
                 printHelpMessage();
+                return result;
+            } else if(Objects.equals(commandName, "-v") || Objects.equals(commandName, "--version")){
+                try{
+                    System.out.println("casbin-java-cli " + getGitVersion() + "\njcasbin " + getDependencyVersion("org.casbin","jcasbin"));
+                }catch (Exception e) {
+                    System.out.println("Failed to retrieve version information.");
+                    e.printStackTrace();
+                    System.out.println("Run './casbin --help or ./casbin -h' for usage.");
+                }
                 return result;
             }
 
@@ -116,5 +134,66 @@ public class Client {
                 "\n" +
                 "    For more information, visit https://github.com/casbin/casbin");
 
+    }
+
+    /**
+     * Retrieves the Git version.
+     *
+     * @return The latest Git tag if available; otherwise, the short hash of the latest commit.
+     * @throws Exception If both the tag and commit hash cannot be retrieved.
+     */
+    public static String getGitVersion() throws Exception {
+        String tag = executeGitCommand("git describe --tags --abbrev=0");
+        if (tag == null || tag.isEmpty()) {
+            String commitHash = executeGitCommand("git rev-parse --short HEAD");
+            if (commitHash == null || commitHash.isEmpty()) {
+                throw new RuntimeException("Failed to get Git version (Tag or Commit Hash)");
+            }
+            return commitHash.trim();
+        }
+        return tag.trim();
+    }
+
+    /**
+     * Executes a Git command and retrieves its output.
+     *
+     * @param command The Git command to execute.
+     * @return The first line of the command's output if successful; otherwise, null.
+     * @throws Exception If an error occurs while running the command or reading its output.
+     */
+    private static String executeGitCommand(String command) throws Exception {
+        Process process = Runtime.getRuntime().exec(command);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String result = reader.readLine();
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                return null;
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Retrieves the version of a specific dependency from the Maven POM file located in the project root directory.
+     *
+     * @param groupId    the groupId of the dependency to search for.
+     * @param artifactId the artifactId of the dependency to search for.
+     * @return the version of the specified dependency, or null if the dependency is not found.
+     * @throws ParserConfigurationException if a configuration error occurs during the creation of the SAX parser.
+     * @throws IOException                  if an I/O error occurs while reading the POM file.
+     * @throws SAXException                 if a parsing error occurs while processing the POM file.
+     */
+    public static String getDependencyVersion(String groupId, String artifactId) throws ParserConfigurationException, IOException, SAXException {
+        String projectRootPath = System.getProperty("user.dir");
+        String pomFilePath = projectRootPath + File.separator + "pom.xml";
+
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParser saxParser = factory.newSAXParser();
+
+        DependencyHandler handler = new DependencyHandler(groupId, artifactId);
+
+        saxParser.parse(new File(pomFilePath), handler);
+
+        return handler.getVersion();
     }
 }
