@@ -7,6 +7,8 @@ import org.casbin.util.Util;
 
 import java.util.*;
 
+import static org.casbin.util.VersionUtil.*;
+
 public class Client {
 
     public static String run(String... args) {
@@ -20,6 +22,14 @@ public class Client {
             String commandName = args[0];
             if(Objects.equals(commandName, "-h") || Objects.equals(commandName, "--help")){
                 printHelpMessage();
+                return result;
+            } else if(Objects.equals(commandName, "-v") || Objects.equals(commandName, "--version")){
+                try{
+                    System.out.println("casbin-java-cli " + getCliVersion() + "\njcasbin " + getCasbinVersion("org.casbin","jcasbin"));
+                }catch (Exception e) {
+                    System.out.println("Failed to retrieve version information.");
+                    e.printStackTrace();
+                }
                 return result;
             }
 
