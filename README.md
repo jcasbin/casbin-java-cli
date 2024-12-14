@@ -18,15 +18,15 @@ mvn clean install
 ```
 
 ## Options
-| options               | description                                  | must | remark                                                    |
-|-----------------------|----------------------------------------------|------|-----------------------------------------------------------|
-| `-m, --model`         | The path of the model file or model text     | y    | Please wrap it with `""` and separate each line with `\|` |
-| `-p, --policy`        | The path of the policy file or policy text   | y    | Please wrap it with `""` and separate each line with `\|` |          
-| `-e, --enforce`       | Check permissions                            | n    | Please wrap it with `""`                                  |
-| `-ex, --enforceEx`    | Check permissions and get which policy it is | n    | Please wrap it with `""`                                  |
-| `-AF, --addFuntion`   | Add custom funtion                           | n    | Please wrap it with `""` and separate each line with `\|` |
-| `-ap, --addPolicy`    | Add a policy rule to the policy file         | n    | Please wrap it with `""`                                  |
-| `-rp, --removePolicy` | Remove a policy rule from the policy file    | n    | Please wrap it with `""`                                  |
+| options               | description                                                                                                                                                                 | must | remark                                                    |
+|-----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------|-----------------------------------------------------------|
+| `-m, --model`         | The path of the model file or model text                                                                                                                                    | y    | Please wrap it with `""` and separate each line with `\|` |
+| `-p, --policy`        | The path of the policy file or policy text                                                                                                                                  | y    | Please wrap it with `""` and separate each line with `\|` |          
+| `-e, --enforce`       | Check permissions                                                                                                                                                           | n    | Please wrap it with `""`                                  |
+| `-ex, --enforceEx`    | Check permissions and get which policy it is                                                                                                                                | n    | Please wrap it with `""`                                  |
+| `-AF, --addFuntion`   | Add custom funtion using text or function file.<br/>file format see [function.conf](https://github.com/jcasbin/casbin-java-cli/blob/master/examples/keymatch_function.conf) | n    | Please wrap it with `""` and separate each line with `\|` |
+| `-ap, --addPolicy`    | Add a policy rule to the policy file                                                                                                                                        | n    | Please wrap it with `""`                                  |
+| `-rp, --removePolicy` | Remove a policy rule from the policy file                                                                                                                                   | n    | Please wrap it with `""`                                  |
 
 ## Get started
 

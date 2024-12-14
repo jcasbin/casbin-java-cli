@@ -43,10 +43,12 @@ public class Client {
             NewEnforcer enforcer = new NewEnforcer(model, policy);
 
             if(cmd.hasOption("AF")) {
-                String codes = cmd.getOptionValue("AF");
-                String methodName = Util.getMethodName(codes);
-                CustomFunction customFunction = DynamicClassGenerator.generateClass(methodName, codes);
-                enforcer.addFunction(methodName, customFunction);
+                List<String> codes = Util.parse(cmd.getOptionValue("AF"));
+                for (String code : codes) {
+                    String methodName = Util.getMethodName(code);
+                    CustomFunction customFunction = DynamicClassGenerator.generateClass(methodName, code);
+                    enforcer.addFunction(methodName, customFunction);
+                }
             }
             CommandExecutor commandExecutor = new CommandExecutor(enforcer, commandName, cmd.getArgs());
             Object o = commandExecutor.outputResult();
@@ -110,7 +112,7 @@ public class Client {
                 "    Options:\n" +
                 "      -m, --model <model>          The path of the model file or model text. Please wrap it with \"\" and separate each line with \"|\"\n" +
                 "      -p, --policy <policy>        The path of the policy file or policy text. Please wrap it with \"\" and separate each line with \"|\"\n" +
-                "      -AF, --addFunction <functionDefinition>       Add custom function. Please wrap it with \"\" and separate each line with \"|\"\n" +
+                "      -AF, --addFunction <functionDefinition>       The path of the function file or function text. Please wrap it with \"\" and separate each line with \"|\"\n" +
                 "\n" +
                 "    args:\n" +
                 "      Parameters required for the method\n" +

@@ -116,6 +116,41 @@ public class ClientTest {
         assertEquals(Client.run(new String[]{"enforce", "-m", model, "-p", "examples/keymatch_policy.csv", "-AF", func,   "cathy", "/cathy_data", "POST"}), "{\"allow\":true,\"explain\":null}");
         assertEquals(Client.run(new String[]{"enforce", "-m", model, "-p", "examples/keymatch_policy.csv", "-AF", func,   "cathy", "/cathy_data", "DELETE"}), "{\"allow\":false,\"explain\":null}");
 
+        // test add Function using file
+        String methodName2 = "keyMatchTest2";
+        String model2 = "[request_definition]\n" +
+                "r = sub, obj, act\n" +
+                "\n" +
+                "[policy_definition]\n" +
+                "p = sub, obj, act\n" +
+                "\n" +
+                "[policy_effect]\n" +
+                "e = some(where (p.eft == allow))\n" +
+                "\n" +
+                "[matchers]\n" +
+                "m = r.sub == p.sub && " + methodName + "(r.obj, p.obj) && " + methodName2 + "(r.obj, p.obj)" + "&& regexMatch(r.act, p.act)\n";
+
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf", "alice", "/alice_data/resource1", "GET"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/alice_data/resource1", "POST"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/alice_data/resource2", "GET"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/alice_data/resource2", "POST"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/bob_data/resource1", "GET"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/bob_data/resource1", "POST"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/bob_data/resource2", "GET"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "alice", "/bob_data/resource2", "POST"}), "{\"allow\":false,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/alice_data/resource1", "GET"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/alice_data/resource1", "POST"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/alice_data/resource2", "GET"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/alice_data/resource2", "POST"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/bob_data/resource1", "GET"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/bob_data/resource1", "POST"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/bob_data/resource2", "GET"}), "{\"allow\":false,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "bob", "/bob_data/resource2", "POST"}), "{\"allow\":true,\"explain\":null}");
+
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "cathy", "/cathy_data", "GET"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "cathy", "/cathy_data", "POST"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforce", "-m", model2, "-p", "examples/keymatch_policy.csv", "-AF", "examples/keymatch_function.conf",   "cathy", "/cathy_data", "DELETE"}), "{\"allow\":false,\"explain\":null}");
     }
 
     @Test
