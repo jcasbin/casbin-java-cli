@@ -20,14 +20,51 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /***
  * Utility class for retrieving version-related information.
  */
 public class VersionUtil {
+
+    /***
+     * Calculates the new version based on the current version and the type of commit.
+     *
+     * @param currentVersion The current version string in the format "vX.Y.Z".
+     * @param commitType The type of commit that caused the version change (e.g., "fix", "feat", "breaking change").
+     * @return The calculated new version string in the format "vX.Y.Z".
+     */
+    public static String calculateNewVersion(String currentVersion, String commitType) {
+        String[] versionParts = currentVersion.substring(1).split("\\.");
+        int major = Integer.parseInt(versionParts[0]);
+        int minor = Integer.parseInt(versionParts[1]);
+        int patch = Integer.parseInt(versionParts[2]);
+
+        switch (commitType.toLowerCase()) {
+            case "fix":
+                patch++;
+                break;
+            case "feat":
+                minor++;
+                patch = 0;
+                break;
+            case "breaking change":
+                major++;
+                minor = 0;
+                patch = 0;
+                break;
+            default:
+                return currentVersion;
+        }
+        return "v" + major + "." + minor + "." + patch;
+    }
 
     /**
      * Retrieves Cli version information.
@@ -50,12 +87,32 @@ public class VersionUtil {
         String tag = properties.getProperty("git.closest.tag.name", "Unknown");
         String commitCount = properties.getProperty("git.closest.tag.commit.count", "Unknown");
 
-        if(tag.isEmpty()) {
+        String commitMessage = properties.getProperty("git.commit.message.full", "Unknown");
+        Pattern pattern = Pattern.compile("^(fix|feat|chore|docs|style|refactor|test|perf|build|ci):");
+        Matcher matcher = pattern.matcher(commitMessage);
+
+        if(tag.isEmpty() || tag.equals("Unknown")) {
             tag = properties.getProperty("git.tags", "Unknown");
+            if(tag.isEmpty() || tag.equals("Unknown")) {
+                InputStream versionInputStream = Client.class.getResourceAsStream("/META-INF/lastCli.version");
+                if (versionInputStream != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(versionInputStream, StandardCharsets.UTF_8));
+                    String version =  reader.readLine();
+                    if (version != null && matcher.find()) {
+                        tag = calculateNewVersion(version, matcher.group(1));
+                    }
+                }
+            }
+        }else if(!commitCount.isEmpty() && !commitCount.equals("0") && !commitCount.equals("Unknown") && matcher.find()) {
+            tag = calculateNewVersion(tag, matcher.group(1));
+            commitCount = "0";
         }
-        if (commitCount.isEmpty()) {
+
+        if ((commitCount.isEmpty() || commitCount.equals("0") || commitCount.equals("Unknown"))
+                && (!tag.isEmpty() && !tag.equals("Unknown"))) {
             return tag;
         }
+
         return commitId;
     }
 
