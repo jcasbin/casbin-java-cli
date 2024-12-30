@@ -1,4 +1,12 @@
 # casbin-java-cli
+[![GitHub Actions](https://github.com/jcasbin/casbin-spring-boot-starter/workflows/build/badge.svg)](https://github.com/jcasbin/casbin-spring-boot-starter/actions)
+[![License](https://img.shields.io/github/license/jcasbin/casbin-spring-boot-starter.svg?style=flat-square&color=blue)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+[![Discord](https://img.shields.io/discord/1022748306096537660?logo=discord&label=discord&color=5865F2)](https://discord.gg/S5UjpzGZjN)
+[![codebeat badge](https://codebeat.co/badges/df265133-60a0-4ee7-b57d-25fd27273905)](https://codebeat.co/projects/github-com-casbin-java-cli-master)
+[![Javadocs](https://www.javadoc.io/badge/org.casbin/shiro-casbin.svg)](https://www.javadoc.io/doc/org.casbin/casbin-java-cli)
+[![Coverage Status](https://codecov.io/gh/jcasbin/shiro-casbin/branch/master/graph/badge.svg)](https://codecov.io/gh/jcasbin/casbin-java-cli?branch=master)
+
+[![](https://raw.githubusercontent.com/casbin/jcasbin/master/casbin-logo.png)](https://casbin.org)
 
 casbin-java-cli is a command-line tool based on jcasbin, enabling you to use all of jcasbin's APIs in the shell.
 
