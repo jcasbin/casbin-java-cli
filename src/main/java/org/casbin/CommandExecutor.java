@@ -1,6 +1,7 @@
 package org.casbin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.casbin.jcasbin.main.EnforceResult;
 import org.casbin.jcasbin.main.Enforcer;
@@ -23,6 +24,32 @@ public class CommandExecutor {
         this.enforcer = enforcer;
         this.inputMethodName = inputMethodName;
         this.inputVal = inputVal;
+    }
+
+    /***
+     * Converts a string input into a JSON formatted string.
+     *
+     * @param input The input string to be converted to JSON format. It should be enclosed in curly braces {}.
+     * @return A JSON formatted string representing the key-value pairs from the input string.
+     */
+    public static String convertToJson(String input) {
+        input = input.trim().substring(1, input.length() - 1).trim();
+        StringBuilder jsonBuilder = new StringBuilder("{");
+        String[] pairs = input.split(",");
+        for (String pair : pairs) {
+            pair = pair.trim();
+            String[] keyValue = pair.split(":");
+            if (keyValue.length == 2) {
+                String key = keyValue[0].trim();
+                String value = keyValue[1].trim();
+                jsonBuilder.append("\"").append(key).append("\":").append(value).append(",");
+            }
+        }
+        if (jsonBuilder.length() > 1) {
+            jsonBuilder.deleteCharAt(jsonBuilder.length() - 1);
+        }
+        jsonBuilder.append("}");
+        return jsonBuilder.toString();
     }
 
     public String outputResult() throws InvocationTargetException, IllegalAccessException, JsonProcessingException {
@@ -75,7 +102,30 @@ public class CommandExecutor {
                     }
                 }
 
-                Object invoke = method.invoke(enforcer, convertedParams);
+                Object[] extraConvertedParams = new Object[inputVal.length];
+                boolean hasJson = false;
+                try{
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    if(inputVal.length > 0 && inputVal[0].trim().startsWith("{")) {
+                        Map<String, Object> objectMap = objectMapper.readValue(convertToJson(inputVal[0]), new TypeReference<Map<String, Object>>() {
+                        });
+                        extraConvertedParams[0] = objectMap;
+                        if (inputVal.length >= 1) {
+                            System.arraycopy(inputVal, 1, extraConvertedParams, 1, inputVal.length - 1);
+                        }
+                        hasJson = true;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    hasJson = false;
+                }
+                Object invoke;
+                if(hasJson){
+                    invoke = method.invoke(enforcer, (Object) extraConvertedParams);
+                } else {
+                    invoke = method.invoke(enforcer, convertedParams);
+                }
+
                 if(returnType == boolean.class) {
                     responseBody.setAllow((Boolean) invoke);
                 } else if (returnType == List.class) {

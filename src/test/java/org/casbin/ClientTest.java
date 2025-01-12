@@ -319,5 +319,9 @@ public class ClientTest {
         }
     }
 
-
+    @Test
+    public void testABACRule() {
+        assertEquals(Client.run(new String[]{"enforce", "-m", "examples/abac_rule_model.conf", "-p", "examples/abac_rule_policy.csv", "{Age: 30}", "/data1", "read"}), "{\"allow\":true,\"explain\":null}");
+        assertEquals(Client.run(new String[]{"enforceEx", "-m", "examples/abac_rule_model.conf", "-p", "examples/abac_rule_policy.csv", "{Age: 30}", "/data1", "read"}), "{\"allow\":true,\"explain\":[\"r.sub.Age > 18 && r.sub.Age < 60\",\"/data1\",\"read\"]}");
+    }
 }
