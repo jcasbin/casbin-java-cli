@@ -324,4 +324,10 @@ public class ClientTest {
         assertEquals(Client.run(new String[]{"enforce", "-m", "examples/abac_rule_model.conf", "-p", "examples/abac_rule_policy.csv", "{Age: 30}", "/data1", "read"}), "{\"allow\":true,\"explain\":null}");
         assertEquals(Client.run(new String[]{"enforceEx", "-m", "examples/abac_rule_model.conf", "-p", "examples/abac_rule_policy.csv", "{Age: 30}", "/data1", "read"}), "{\"allow\":true,\"explain\":[\"r.sub.Age > 18 && r.sub.Age < 60\",\"/data1\",\"read\"]}");
     }
+
+    @Test
+    public void testKeyMatch5() {
+        assertEquals(Client.run(new String[]{"enforceEx", "-m", "examples/keymatch5_model.conf", "-p", "examples/keymatch5_policy.csv", "alice", "/alice_data/hello/123", "GET"}), "{\"allow\":true,\"explain\":[\"alice\",\"/alice_data/{resource}/.*\",\"GET\"]}");
+        assertEquals(Client.run(new String[]{"enforceEx", "-m", "examples/keymatch5_model.conf", "-p", "examples/keymatch5_policy.csv", "alice", "/alice_data/hello/123", "POST"}), "{\"allow\":false,\"explain\":[]}");
+    }
 }
