@@ -33,23 +33,29 @@ public class CommandExecutor {
      * @return A JSON formatted string representing the key-value pairs from the input string.
      */
     public static String convertToJson(String input) {
-        input = input.trim().substring(1, input.length() - 1).trim();
-        StringBuilder jsonBuilder = new StringBuilder("{");
-        String[] pairs = input.split(",");
-        for (String pair : pairs) {
-            pair = pair.trim();
-            String[] keyValue = pair.split(":");
-            if (keyValue.length == 2) {
-                String key = keyValue[0].trim();
-                String value = keyValue[1].trim();
-                jsonBuilder.append("\"").append(key).append("\":").append(value).append(",");
+        input = input.trim();
+        // Handle the simple format {key: value}
+        if (!input.contains("\"")) {
+            input = input.substring(1, input.length() - 1).trim();
+            StringBuilder jsonBuilder = new StringBuilder("{");
+            String[] pairs = input.split(",");
+            for (String pair : pairs) {
+                pair = pair.trim();
+                String[] keyValue = pair.split(":");
+                if (keyValue.length == 2) {
+                    String key = keyValue[0].trim();
+                    String value = keyValue[1].trim();
+                    jsonBuilder.append("\"").append(key).append("\":").append(value).append(",");
+                }
             }
+            if (jsonBuilder.length() > 1) {
+                jsonBuilder.deleteCharAt(jsonBuilder.length() - 1);
+            }
+            jsonBuilder.append("}");
+            return jsonBuilder.toString();
         }
-        if (jsonBuilder.length() > 1) {
-            jsonBuilder.deleteCharAt(jsonBuilder.length() - 1);
-        }
-        jsonBuilder.append("}");
-        return jsonBuilder.toString();
+
+        return input;
     }
 
     public String outputResult() throws InvocationTargetException, IllegalAccessException, JsonProcessingException {
@@ -104,16 +110,17 @@ public class CommandExecutor {
 
                 Object[] extraConvertedParams = new Object[inputVal.length];
                 boolean hasJson = false;
-                try{
+                try {
                     ObjectMapper objectMapper = new ObjectMapper();
-                    if(inputVal.length > 0 && inputVal[0].trim().startsWith("{")) {
-                        Map<String, Object> objectMap = objectMapper.readValue(convertToJson(inputVal[0]), new TypeReference<Map<String, Object>>() {
-                        });
-                        extraConvertedParams[0] = objectMap;
-                        if (inputVal.length >= 1) {
-                            System.arraycopy(inputVal, 1, extraConvertedParams, 1, inputVal.length - 1);
+                    for (int i = 0; i < inputVal.length; i++) {
+                        if (inputVal[i].trim().startsWith("{")) {
+                            Map<String, Object> objectMap = objectMapper.readValue(convertToJson(inputVal[i]), new TypeReference<Map<String, Object>>() {
+                            });
+                            extraConvertedParams[i] = objectMap;
+                            hasJson = true;
+                        } else {
+                            extraConvertedParams[i] = inputVal[i];
                         }
-                        hasJson = true;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
