@@ -54,8 +54,13 @@ public class Client {
             return o.toString();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Run './casbin --help or ./casbin -h' for usage.");
+            Throwable cause = e.getCause();
+            if (cause instanceof org.casbin.jcasbin.exception.CasbinMatcherException) {
+                System.out.println(cause.getMessage());
+            } else {
+                e.printStackTrace();
+                System.out.println("Run './casbin --help or ./casbin -h' for usage.");
+            }
             System.exit(1);
         }
         return result;
